@@ -39,7 +39,7 @@ getPostgresVersion();
 // Signup
 app.post('/signup', async (req, res) => {
   const client = await pool.connect();
-  const { firstName, lastName, phoneNumber, email, password } = req.body;
+  const { firstName, lastName, countryCode, phoneNumber, email, password } = req.body;
 
   try {
     const existingUser = await client.query(
@@ -55,8 +55,8 @@ app.post('/signup', async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, saltRounds);
 
     const result = await client.query(
-      'INSERT INTO users (first_name, last_name, phone_number, email, password) VALUES ($1, $2, $3, $4, $5) RETURNING id',
-      [firstName, lastName, phoneNumber, email, hashedPassword]
+      'INSERT INTO users (first_name, last_name, country_code, phone_number, email, password) VALUES ($1, $2, $3, $4, $5) RETURNING id',
+      [firstName, lastName, countryCode, phoneNumber, email, hashedPassword]
     );
     const user = result.rows[0];
 

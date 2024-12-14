@@ -55,7 +55,7 @@ app.post('/signup', async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, saltRounds);
 
     const result = await client.query(
-      'INSERT INTO users (first_name, last_name, country_code, phone_number, email, password) VALUES ($1, $2, $3, $4, $5) RETURNING id',
+      'INSERT INTO users (first_name, last_name, country_code, phone_number, email, password) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id',
       [firstName, lastName, countryCode, phoneNumber, email, hashedPassword]
     );
     const user = result.rows[0];

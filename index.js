@@ -1,12 +1,22 @@
 require('dotenv').config(); 
 const express = require('express');
+const multer = require('multer');
 const cors = require('cors');
 const path = require('path');
 const { Pool } = require('pg');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const admin = require('firebase-admin');
+const serviceAccount = require(path.resolve('twitter-app-90521-firebase-adminsdk-ufitu-70ee98c60e.json'));
+
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount),
+  storageBucket: 'twitter-app-90521.appspot.com',
+});
 
 const app = express();
+const upload = multer({ storage: multer.memoryStorage() });
+const bucket = admin.storage().bucket();
 
 app.use(cors({
   origin: '*',
@@ -100,6 +110,46 @@ app.post('/login', async (req, res) => {
   } catch (error) {
     console.error('Error logging in:', error);
     res.status(500).json({ error: 'Login failed', details: error.message });
+  }
+});
+
+// Create pet
+app.post('/upload', upload.single('image'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ success: false, message: 'No file uploaded' });
+    }
+
+    const file = req.file; // Multer provides the file in `req.file`
+    const blob = bucket.file(`uploads/${Date.now()}_${file.originalname}`); // Unique filename
+    const blobStream = blob.createWriteStream({
+      metadata: {
+        contentType: file.mimetype, // Set the MIME type for the file
+      },
+    });
+
+    // Pipe the file buffer to Firebase Storage
+    blobStream.end(file.buffer);
+
+    blobStream.on('finish', async () => {
+      // Generate a public URL
+      const publicUrl = `https://storage.googleapis.com/${bucket.name}/${blob.name}`;
+      console.log(`File uploaded to ${publicUrl}`);
+
+      return res.status(200).json({
+        success: true,
+        message: 'File uploaded successfully',
+        url: publicUrl,
+      });
+    });
+
+    blobStream.on('error', (err) => {
+      console.error('Upload error:', err);
+      res.status(500).json({ success: false, message: 'File upload failed', error: err.message });
+    });
+  } catch (err) {
+    console.error('Unexpected error:', err);
+    res.status(500).json({ success: false, message: 'Unexpected error occurred', error: err.message });
   }
 });
 

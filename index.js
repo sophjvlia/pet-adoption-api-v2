@@ -12,7 +12,7 @@ const serviceAccount = {
   type: process.env.FIREBASE_TYPE,
   project_id: process.env.FIREBASE_PROJECT_ID,
   private_key_id: process.env.FIREBASE_PRIVATE_KEY_ID,
-  private_key: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n'), // Replace escaped newlines
+  private_key: process.env.FIREBASE_PRIVATE_KEY,
   client_email: process.env.FIREBASE_CLIENT_EMAIL,
   client_id: process.env.FIREBASE_CLIENT_ID,
   auth_uri: process.env.FIREBASE_AUTH_URI,
@@ -162,6 +162,92 @@ app.post('/upload', upload.single('image'), async (req, res) => {
   } catch (err) {
     console.error('Unexpected error:', err);
     res.status(500).json({ success: false, message: 'Unexpected error occurred', error: err.message });
+  }
+});
+
+// CREATE a new pet
+app.post('/pets', async (req, res) => {
+  const { name, age, breed, gender, description, status, image_url } = req.body;
+  const query = `
+    INSERT INTO pets (name, age, breed, gender, description, status, image_url)
+    VALUES ($1, $2, $3, $4, $5, $6, $7)
+    RETURNING *;
+  `;
+  const values = [name, age, breed, gender, description, status, image_url];
+
+  try {
+    const result = await pool.query(query, values);
+    res.status(201).json({ success: true, data: result.rows[0] });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: 'Error creating pet' });
+  }
+});
+
+// READ all pets
+app.get('/pets', async (req, res) => {
+  try {
+    const result = await pool.query('SELECT * FROM pets ORDER BY created_at DESC;');
+    res.status(200).json({ success: true, data: result.rows });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: 'Error fetching pets' });
+  }
+});
+
+// READ a single pet by ID
+app.get('/pets/:id', async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const result = await pool.query('SELECT * FROM pets WHERE id = $1;', [id]);
+    if (result.rows.length === 0) {
+      return res.status(404).json({ success: false, message: 'Pet not found' });
+    }
+    res.status(200).json({ success: true, data: result.rows[0] });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: 'Error fetching pet' });
+  }
+});
+
+// UPDATE a pet by ID
+app.put('/pets/:id', async (req, res) => {
+  const { id } = req.params;
+  const { name, age, breed, gender, description, status, image_url } = req.body;
+  const query = `
+    UPDATE pets
+    SET name = $1, age = $2, breed = $3, gender = $4, description = $5, status = $6, image_url = $7
+    WHERE id = $8
+    RETURNING *;
+  `;
+  const values = [name, age, breed, gender, description, status, image_url, id];
+
+  try {
+    const result = await pool.query(query, values);
+    if (result.rows.length === 0) {
+      return res.status(404).json({ success: false, message: 'Pet not found' });
+    }
+    res.status(200).json({ success: true, data: result.rows[0] });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: 'Error updating pet' });
+  }
+});
+
+// DELETE a pet by ID
+app.delete('/pets/:id', async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const result = await pool.query('DELETE FROM pets WHERE id = $1;', [id]);
+    if (result.rowCount === 0) {
+      return res.status(404).json({ success: false, message: 'Pet not found' });
+    }
+    res.status(200).json({ success: true, message: 'Pet deleted successfully' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: 'Error deleting pet' });
   }
 });
 

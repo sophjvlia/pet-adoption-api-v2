@@ -8,13 +8,6 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const admin = require('firebase-admin');
 
-// const fs = require('fs');
-
-// const serviceAccount = fs.readFileSync('serviceAccount.json', 'utf8');
-// const base64Encoded = Buffer.from(serviceAccount).toString('base64');
-
-// console.log('Base64 Encoded Service Account:', base64Encoded);
-
 // Decode the Base64-encoded service account
 const base64EncodedServiceAccount = process.env.BASE64_ENCODED_SERVICE_ACCOUNT;
 
@@ -24,19 +17,6 @@ if (!base64EncodedServiceAccount) {
 
 const serviceAccount = JSON.parse(Buffer.from(base64EncodedServiceAccount, 'base64').toString('utf8'));
 
-// const serviceAccount = {
-//   type: process.env.FIREBASE_TYPE,
-//   project_id: process.env.FIREBASE_PROJECT_ID,
-//   private_key_id: process.env.FIREBASE_PRIVATE_KEY_ID,
-//   private_key: process.env.FIREBASE_PRIVATE_KEY,
-//   client_email: process.env.FIREBASE_CLIENT_EMAIL,
-//   client_id: process.env.FIREBASE_CLIENT_ID,
-//   auth_uri: process.env.FIREBASE_AUTH_URI,
-//   token_uri: process.env.FIREBASE_TOKEN_URI,
-//   auth_provider_x509_cert_url: process.env.FIREBASE_AUTH_PROVIDER_CERT_URL,
-//   client_x509_cert_url: process.env.FIREBASE_CLIENT_CERT_URL,
-// };
-
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
   storageBucket: 'twitter-app-90521.appspot.com',
@@ -44,7 +24,6 @@ admin.initializeApp({
 
 const app = express();
 const upload = multer({ storage: multer.memoryStorage() });
-const bucket = admin.storage().bucket();
 
 app.use(cors({
   origin: '*',
@@ -141,10 +120,12 @@ app.post('/login', async (req, res) => {
   }
 });
 
-// Create pet
-app.post('/upload', upload.single('image'), async (req, res) => {
+// CREATE a new pet
+app.post('/pets', upload.single('image'), async (req, res) => {
   try {
-    const file = req.file; // Assuming you're using multer for file uploads
+    // File upload logic
+    const file = req.file; 
+    
     if (!file) {
       return res.status(400).json({ success: false, message: "No file uploaded" });
     }
@@ -166,52 +147,34 @@ app.post('/upload', upload.single('image'), async (req, res) => {
     blobStream.on("finish", async () => {
       try {
         // Generate a public URL
-        const publicUrl = await blob.getSignedUrl({
+        const [publicUrl] = await blob.getSignedUrl({
           action: "read",
           expires: "03-01-2500", // Long-term expiry date
         });
 
-        res.status(200).json({ success: true, publicUrl });
+        const { name, age, breed, gender, description, status } = req.body;
+
+        const query = `
+          INSERT INTO pets (name, age, breed, gender, description, status, image_url)
+          VALUES ($1, $2, $3, $4, $5, $6, $7)
+          RETURNING *;
+        `;
+        const values = [name, age, breed, gender, description, status, publicUrl];
+
+        const result = await pool.query(query, values);
+
+        res.status(201).json({ success: true, data: result.rows[0] });
       } catch (error) {
         console.error(error);
-        res.status(500).json({ success: false, message: "Failed to generate URL", error: error.message });
+        res.status(500).json({ success: false, message: "Error creating pet", error: error.message });
       }
     });
 
+    // Start the upload
     blobStream.end(file.buffer);
   } catch (error) {
     console.error(error);
-    res.status(500).json({ success: false, message: "Error uploading file", error: error.message });
-  }
-});
-
-// CREATE a new pet
-app.post('/pets', async (req, res) => {
-  const { name, age, breed, gender, description, status, image_url } = req.body;
-  const query = `
-    INSERT INTO pets (name, age, breed, gender, description, status, image_url)
-    VALUES ($1, $2, $3, $4, $5, $6, $7)
-    RETURNING *;
-  `;
-  const values = [name, age, breed, gender, description, status, image_url];
-
-  try {
-    const result = await pool.query(query, values);
-    res.status(201).json({ success: true, data: result.rows[0] });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ success: false, message: 'Error creating pet' });
-  }
-});
-
-// READ all pets
-app.get('/pets', async (req, res) => {
-  try {
-    const result = await pool.query('SELECT * FROM pets ORDER BY created_at DESC;');
-    res.status(200).json({ success: true, data: result.rows });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ success: false, message: 'Error fetching pets' });
+    res.status(500).json({ success: false, message: "Unexpected error", error: error.message });
   }
 });
 
@@ -232,26 +195,67 @@ app.get('/pets/:id', async (req, res) => {
 });
 
 // UPDATE a pet by ID
-app.put('/pets/:id', async (req, res) => {
+app.put('/pets/:id', upload.single('image'), async (req, res) => {
   const { id } = req.params;
-  const { name, age, breed, gender, description, status, image_url } = req.body;
-  const query = `
-    UPDATE pets
-    SET name = $1, age = $2, breed = $3, gender = $4, description = $5, status = $6, image_url = $7
-    WHERE id = $8
-    RETURNING *;
-  `;
-  const values = [name, age, breed, gender, description, status, image_url, id];
+  const { name, age, breed, gender, description, status } = req.body;
 
   try {
+    let imageUrl = req.body.image_url;
+
+    if (req.file) {
+      const file = req.file;
+
+      const bucket = admin.storage().bucket();
+      const blob = bucket.file(`uploads/${Date.now()}_${file.originalname}`);
+      const blobStream = blob.createWriteStream({
+        resumable: true,
+        metadata: {
+          contentType: file.mimetype,
+        },
+      });
+
+      blobStream.on("error", (err) => {
+        console.error(err);
+        return res.status(500).json({ success: false, message: "File upload failed", error: err.message });
+      });
+
+      const uploadPromise = new Promise((resolve, reject) => {
+        blobStream.on("finish", async () => {
+          try {
+            const [publicUrl] = await blob.getSignedUrl({
+              action: "read",
+              expires: "03-01-2500", // Long-term expiry date
+            });
+            resolve(publicUrl);
+          } catch (error) {
+            console.error(error);
+            reject(error);
+          }
+        });
+        blobStream.end(file.buffer);
+      });
+
+      imageUrl = await uploadPromise;
+    }
+
+    const query = `
+      UPDATE pets
+      SET name = $1, age = $2, breed = $3, gender = $4, description = $5, status = $6, image_url = $7
+      WHERE id = $8
+      RETURNING *;
+    `;
+    const values = [name, age, breed, gender, description, status, imageUrl, id];
+
     const result = await pool.query(query, values);
+
     if (result.rows.length === 0) {
       return res.status(404).json({ success: false, message: 'Pet not found' });
     }
+    
     res.status(200).json({ success: true, data: result.rows[0] });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ success: false, message: 'Error updating pet' });
+    res.status(500).json({ success: false, message: 'Error updating pet', error: error.message });
   }
 });
 

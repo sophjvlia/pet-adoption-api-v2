@@ -8,18 +8,34 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const admin = require('firebase-admin');
 
-const serviceAccount = {
-  type: process.env.FIREBASE_TYPE,
-  project_id: process.env.FIREBASE_PROJECT_ID,
-  private_key_id: process.env.FIREBASE_PRIVATE_KEY_ID,
-  private_key: process.env.FIREBASE_PRIVATE_KEY,
-  client_email: process.env.FIREBASE_CLIENT_EMAIL,
-  client_id: process.env.FIREBASE_CLIENT_ID,
-  auth_uri: process.env.FIREBASE_AUTH_URI,
-  token_uri: process.env.FIREBASE_TOKEN_URI,
-  auth_provider_x509_cert_url: process.env.FIREBASE_AUTH_PROVIDER_CERT_URL,
-  client_x509_cert_url: process.env.FIREBASE_CLIENT_CERT_URL,
-};
+// const fs = require('fs');
+
+// const serviceAccount = fs.readFileSync('serviceAccount.json', 'utf8');
+// const base64Encoded = Buffer.from(serviceAccount).toString('base64');
+
+// console.log('Base64 Encoded Service Account:', base64Encoded);
+
+// Decode the Base64-encoded service account
+const base64EncodedServiceAccount = process.env.BASE64_ENCODED_SERVICE_ACCOUNT;
+
+if (!base64EncodedServiceAccount) {
+  throw new Error('BASE64_ENCODED_SERVICE_ACCOUNT environment variable is missing');
+}
+
+const serviceAccount = JSON.parse(Buffer.from(base64EncodedServiceAccount, 'base64').toString('utf8'));
+
+// const serviceAccount = {
+//   type: process.env.FIREBASE_TYPE,
+//   project_id: process.env.FIREBASE_PROJECT_ID,
+//   private_key_id: process.env.FIREBASE_PRIVATE_KEY_ID,
+//   private_key: process.env.FIREBASE_PRIVATE_KEY,
+//   client_email: process.env.FIREBASE_CLIENT_EMAIL,
+//   client_id: process.env.FIREBASE_CLIENT_ID,
+//   auth_uri: process.env.FIREBASE_AUTH_URI,
+//   token_uri: process.env.FIREBASE_TOKEN_URI,
+//   auth_provider_x509_cert_url: process.env.FIREBASE_AUTH_PROVIDER_CERT_URL,
+//   client_x509_cert_url: process.env.FIREBASE_CLIENT_CERT_URL,
+// };
 
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
@@ -128,40 +144,44 @@ app.post('/login', async (req, res) => {
 // Create pet
 app.post('/upload', upload.single('image'), async (req, res) => {
   try {
-    if (!req.file) {
-      return res.status(400).json({ success: false, message: 'No file uploaded' });
+    const file = req.file; // Assuming you're using multer for file uploads
+    if (!file) {
+      return res.status(400).json({ success: false, message: "No file uploaded" });
     }
 
-    const file = req.file; // Multer provides the file in `req.file`
-    const blob = bucket.file(`uploads/${Date.now()}_${file.originalname}`); // Unique filename
+    const bucket = admin.storage().bucket();
+    const blob = bucket.file(`uploads/${Date.now()}_${file.originalname}`);
     const blobStream = blob.createWriteStream({
+      resumable: true,
       metadata: {
-        contentType: file.mimetype, // Set the MIME type for the file
+        contentType: file.mimetype,
       },
     });
 
-    // Pipe the file buffer to Firebase Storage
+    blobStream.on("error", (err) => {
+      console.error(err);
+      res.status(500).json({ success: false, message: "File upload failed", error: err.message });
+    });
+
+    blobStream.on("finish", async () => {
+      try {
+        // Generate a public URL
+        const publicUrl = await blob.getSignedUrl({
+          action: "read",
+          expires: "03-01-2500", // Long-term expiry date
+        });
+
+        res.status(200).json({ success: true, publicUrl });
+      } catch (error) {
+        console.error(error);
+        res.status(500).json({ success: false, message: "Failed to generate URL", error: error.message });
+      }
+    });
+
     blobStream.end(file.buffer);
-
-    blobStream.on('finish', async () => {
-      // Generate a public URL
-      const publicUrl = `https://storage.googleapis.com/${bucket.name}/${blob.name}`;
-      console.log(`File uploaded to ${publicUrl}`);
-
-      return res.status(200).json({
-        success: true,
-        message: 'File uploaded successfully',
-        url: publicUrl,
-      });
-    });
-
-    blobStream.on('error', (err) => {
-      console.error('Upload error:', err);
-      res.status(500).json({ success: false, message: 'File upload failed', error: err.message });
-    });
-  } catch (err) {
-    console.error('Unexpected error:', err);
-    res.status(500).json({ success: false, message: 'Unexpected error occurred', error: err.message });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: "Error uploading file", error: error.message });
   }
 });
 

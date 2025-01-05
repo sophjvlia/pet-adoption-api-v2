@@ -131,7 +131,7 @@ app.get('/dog/breeds', async (req, res) => {
     if (result.rows.length === 0) {
       return res.status(404).json({ success: false, message: 'Dog breeds not found' });
     }
-    res.status(200).json({ success: true, data: result.rows[0] });
+    res.status(200).json({ success: true, data: result.rows });
   } catch (error) {
     console.error(error);
     res.status(500).json({ success: false, message: 'Error fetching pet' });
@@ -149,7 +149,7 @@ app.get('/cat/breeds', async (req, res) => {
     if (result.rows.length === 0) {
       return res.status(404).json({ success: false, message: 'Cat breeds not found' });
     }
-    res.status(200).json({ success: true, data: result.rows[0] });
+    res.status(200).json({ success: true, data: result.rows });
   } catch (error) {
     console.error(error);
     res.status(500).json({ success: false, message: 'Error fetching pet' });

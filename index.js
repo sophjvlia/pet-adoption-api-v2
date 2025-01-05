@@ -120,6 +120,42 @@ app.post('/login', async (req, res) => {
   }
 });
 
+// Get dog breeds
+app.get('/dog/breeds', async (req, res) => {
+  const client = await pool.connect();
+  
+  try {
+    const result = await client.query(
+      'SELECT * FROM dog_breeds'
+    );
+    if (result.rows.length === 0) {
+      return res.status(404).json({ success: false, message: 'Dog breeds not found' });
+    }
+    res.status(200).json({ success: true, data: result.rows[0] });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: 'Error fetching pet' });
+  }
+});
+
+// Get cat breeds
+app.get('/cat/breeds', async (req, res) => {
+  const client = await pool.connect();
+
+  try {
+    const result = await client.query(
+      'SELECT * FROM cat_breeds'
+    );
+    if (result.rows.length === 0) {
+      return res.status(404).json({ success: false, message: 'Cat breeds not found' });
+    }
+    res.status(200).json({ success: true, data: result.rows[0] });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: 'Error fetching pet' });
+  }
+});
+
 // CREATE a new pet
 app.post('/pets', upload.single('image'), async (req, res) => {
   try {

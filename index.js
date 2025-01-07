@@ -214,6 +214,20 @@ app.post('/pets', upload.single('image'), async (req, res) => {
   }
 });
 
+// READ all pets
+app.get('/pets', async (req, res) => {
+  try {
+    const result = await pool.query('SELECT * FROM pets;');
+    if (result.rows.length === 0) {
+      return res.status(404).json({ success: false, message: 'Pet not found' });
+    }
+    res.status(200).json({ success: true, data: result.rows });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: 'Error fetching pet' });
+  }
+});
+
 // READ a single pet by ID
 app.get('/pets/:id', async (req, res) => {
   const { id } = req.params;

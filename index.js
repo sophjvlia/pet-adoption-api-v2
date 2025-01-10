@@ -174,63 +174,63 @@ app.get('/cat/breeds', async (req, res) => {
   }
 });
 
-// // CREATE a new pet
-// app.post('/pets', upload.single('image'), async (req, res) => {
-//   try {
-//     // File upload logic
-//     const file = req.file; 
+// CREATE a new pet
+app.post('/pets', upload.single('image'), async (req, res) => {
+  try {
+    // File upload logic
+    const file = req.file; 
     
-//     if (!file) {
-//       return res.status(400).json({ success: false, message: "No file uploaded" });
-//     }
+    if (!file) {
+      return res.status(400).json({ success: false, message: "No file uploaded" });
+    }
 
-//     const bucket = admin.storage().bucket();
-//     const blob = bucket.file(`uploads/${Date.now()}_${file.originalname}`);
-//     const blobStream = blob.createWriteStream({
-//       resumable: true,
-//       metadata: {
-//         contentType: file.mimetype,
-//       },
-//     });
+    const bucket = admin.storage().bucket();
+    const blob = bucket.file(`uploads/${Date.now()}_${file.originalname}`);
+    const blobStream = blob.createWriteStream({
+      resumable: true,
+      metadata: {
+        contentType: file.mimetype,
+      },
+    });
 
-//     blobStream.on("error", (err) => {
-//       console.error(err);
-//       res.status(500).json({ success: false, message: "File upload failed", error: err.message });
-//     });
+    blobStream.on("error", (err) => {
+      console.error(err);
+      res.status(500).json({ success: false, message: "File upload failed", error: err.message });
+    });
 
-//     blobStream.on("finish", async () => {
-//       try {
-//         // Generate a public URL
-//         const [publicUrl] = await blob.getSignedUrl({
-//           action: "read",
-//           expires: "03-01-2500", // Long-term expiry date
-//         });
+    blobStream.on("finish", async () => {
+      try {
+        // Generate a public URL
+        const [publicUrl] = await blob.getSignedUrl({
+          action: "read",
+          expires: "03-01-2500", // Long-term expiry date
+        });
 
-//         const { name, age, breed, gender, description, status } = req.body;
+        const { name, age, breed, gender, description, status } = req.body;
 
-//         const query = `
-//           INSERT INTO pets (name, age, breed, gender, description, status, image_url)
-//           VALUES ($1, $2, $3, $4, $5, $6, $7)
-//           RETURNING *;
-//         `;
-//         const values = [name, age, breed, gender, description, status, publicUrl];
+        const query = `
+          INSERT INTO pets (name, age, breed, gender, description, status, image_url)
+          VALUES ($1, $2, $3, $4, $5, $6, $7)
+          RETURNING *;
+        `;
+        const values = [name, age, breed, gender, description, status, publicUrl];
 
-//         const result = await pool.query(query, values);
+        const result = await pool.query(query, values);
 
-//         res.status(201).json({ success: true, data: result.rows[0] });
-//       } catch (error) {
-//         console.error(error);
-//         res.status(500).json({ success: false, message: "Error creating pet", error: error.message });
-//       }
-//     });
+        res.status(201).json({ success: true, data: result.rows[0] });
+      } catch (error) {
+        console.error(error);
+        res.status(500).json({ success: false, message: "Error creating pet", error: error.message });
+      }
+    });
 
-//     // Start the upload
-//     blobStream.end(file.buffer);
-//   } catch (error) {
-//     console.error(error);
-//     res.status(500).json({ success: false, message: "Unexpected error", error: error.message });
-//   }
-// });
+    // Start the upload
+    blobStream.end(file.buffer);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: "Unexpected error", error: error.message });
+  }
+});
 
 // // READ all pets
 // app.get('/pets', async (req, res) => {

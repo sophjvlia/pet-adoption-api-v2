@@ -53,7 +53,7 @@ async function getPostgresVersion() {
 
 getPostgresVersion();
 
-// Signup
+// SIGN UP
 app.post('/signup', async (req, res) => {
   const client = await pool.connect();
   const { firstName, lastName, countryCode, phoneNumber, email, password } = req.body;
@@ -87,7 +87,7 @@ app.post('/signup', async (req, res) => {
   }
 });
 
-// Login
+// LOG IN
 app.post('/login', async (req, res) => {
   const client = await pool.connect();
   const { email, password } = req.body;
@@ -120,7 +120,7 @@ app.post('/login', async (req, res) => {
   }
 });
 
-// Get dog breeds
+// GET dog breeds
 app.get('/dog/breeds', async (req, res) => {
   const client = await pool.connect();
   
@@ -138,7 +138,7 @@ app.get('/dog/breeds', async (req, res) => {
   }
 });
 
-// Get cat breeds
+// GET cat breeds
 app.get('/cat/breeds', async (req, res) => {
   const client = await pool.connect();
 

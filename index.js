@@ -214,116 +214,116 @@ app.post('/pets', upload.single('image'), async (req, res) => {
   }
 });
 
-// READ all pets
-app.get('/pets', async (req, res) => {
-  try {
-    const result = await pool.query('SELECT * FROM pets;');
-    if (result.rows.length === 0) {
-      return res.status(404).json({ success: false, message: 'Pet not found' });
-    }
-    res.status(200).json({ success: true, data: result.rows });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ success: false, message: 'Error fetching pet' });
-  }
-});
+// // READ all pets
+// app.get('/pets', async (req, res) => {
+//   try {
+//     const result = await pool.query('SELECT * FROM pets;');
+//     if (result.rows.length === 0) {
+//       return res.status(404).json({ success: false, message: 'Pet not found' });
+//     }
+//     res.status(200).json({ success: true, data: result.rows });
+//   } catch (error) {
+//     console.error(error);
+//     res.status(500).json({ success: false, message: 'Error fetching pet' });
+//   }
+// });
 
-// READ a single pet by ID
-app.get('/pets/:id', async (req, res) => {
-  const { id } = req.params;
+// // READ a single pet by ID
+// app.get('/pets/:id', async (req, res) => {
+//   const { id } = req.params;
 
-  try {
-    const result = await pool.query('SELECT * FROM pets WHERE id = $1;', [id]);
-    if (result.rows.length === 0) {
-      return res.status(404).json({ success: false, message: 'Pet not found' });
-    }
-    res.status(200).json({ success: true, data: result.rows[0] });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ success: false, message: 'Error fetching pet' });
-  }
-});
+//   try {
+//     const result = await pool.query('SELECT * FROM pets WHERE id = $1;', [id]);
+//     if (result.rows.length === 0) {
+//       return res.status(404).json({ success: false, message: 'Pet not found' });
+//     }
+//     res.status(200).json({ success: true, data: result.rows[0] });
+//   } catch (error) {
+//     console.error(error);
+//     res.status(500).json({ success: false, message: 'Error fetching pet' });
+//   }
+// });
 
-// UPDATE a pet by ID
-app.put('/pets/:id', upload.single('image'), async (req, res) => {
-  const { id } = req.params;
-  const { name, age, breed, gender, description, status } = req.body;
+// // UPDATE a pet by ID
+// app.put('/pets/:id', upload.single('image'), async (req, res) => {
+//   const { id } = req.params;
+//   const { name, age, breed, gender, description, status } = req.body;
 
-  try {
-    let imageUrl = req.body.image_url;
+//   try {
+//     let imageUrl = req.body.image_url;
 
-    if (req.file) {
-      const file = req.file;
+//     if (req.file) {
+//       const file = req.file;
 
-      const bucket = admin.storage().bucket();
-      const blob = bucket.file(`uploads/${Date.now()}_${file.originalname}`);
-      const blobStream = blob.createWriteStream({
-        resumable: true,
-        metadata: {
-          contentType: file.mimetype,
-        },
-      });
+//       const bucket = admin.storage().bucket();
+//       const blob = bucket.file(`uploads/${Date.now()}_${file.originalname}`);
+//       const blobStream = blob.createWriteStream({
+//         resumable: true,
+//         metadata: {
+//           contentType: file.mimetype,
+//         },
+//       });
 
-      blobStream.on("error", (err) => {
-        console.error(err);
-        return res.status(500).json({ success: false, message: "File upload failed", error: err.message });
-      });
+//       blobStream.on("error", (err) => {
+//         console.error(err);
+//         return res.status(500).json({ success: false, message: "File upload failed", error: err.message });
+//       });
 
-      const uploadPromise = new Promise((resolve, reject) => {
-        blobStream.on("finish", async () => {
-          try {
-            const [publicUrl] = await blob.getSignedUrl({
-              action: "read",
-              expires: "03-01-2500", // Long-term expiry date
-            });
-            resolve(publicUrl);
-          } catch (error) {
-            console.error(error);
-            reject(error);
-          }
-        });
-        blobStream.end(file.buffer);
-      });
+//       const uploadPromise = new Promise((resolve, reject) => {
+//         blobStream.on("finish", async () => {
+//           try {
+//             const [publicUrl] = await blob.getSignedUrl({
+//               action: "read",
+//               expires: "03-01-2500", // Long-term expiry date
+//             });
+//             resolve(publicUrl);
+//           } catch (error) {
+//             console.error(error);
+//             reject(error);
+//           }
+//         });
+//         blobStream.end(file.buffer);
+//       });
 
-      imageUrl = await uploadPromise;
-    }
+//       imageUrl = await uploadPromise;
+//     }
 
-    const query = `
-      UPDATE pets
-      SET name = $1, age = $2, breed = $3, gender = $4, description = $5, status = $6, image_url = $7
-      WHERE id = $8
-      RETURNING *;
-    `;
-    const values = [name, age, breed, gender, description, status, imageUrl, id];
+//     const query = `
+//       UPDATE pets
+//       SET name = $1, age = $2, breed = $3, gender = $4, description = $5, status = $6, image_url = $7
+//       WHERE id = $8
+//       RETURNING *;
+//     `;
+//     const values = [name, age, breed, gender, description, status, imageUrl, id];
 
-    const result = await pool.query(query, values);
+//     const result = await pool.query(query, values);
 
-    if (result.rows.length === 0) {
-      return res.status(404).json({ success: false, message: 'Pet not found' });
-    }
+//     if (result.rows.length === 0) {
+//       return res.status(404).json({ success: false, message: 'Pet not found' });
+//     }
     
-    res.status(200).json({ success: true, data: result.rows[0] });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ success: false, message: 'Error updating pet', error: error.message });
-  }
-});
+//     res.status(200).json({ success: true, data: result.rows[0] });
+//   } catch (error) {
+//     console.error(error);
+//     res.status(500).json({ success: false, message: 'Error updating pet', error: error.message });
+//   }
+// });
 
-// DELETE a pet by ID
-app.delete('/pets/:id', async (req, res) => {
-  const { id } = req.params;
+// // DELETE a pet by ID
+// app.delete('/pets/:id', async (req, res) => {
+//   const { id } = req.params;
 
-  try {
-    const result = await pool.query('DELETE FROM pets WHERE id = $1;', [id]);
-    if (result.rowCount === 0) {
-      return res.status(404).json({ success: false, message: 'Pet not found' });
-    }
-    res.status(200).json({ success: true, message: 'Pet deleted successfully' });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ success: false, message: 'Error deleting pet' });
-  }
-});
+//   try {
+//     const result = await pool.query('DELETE FROM pets WHERE id = $1;', [id]);
+//     if (result.rowCount === 0) {
+//       return res.status(404).json({ success: false, message: 'Pet not found' });
+//     }
+//     res.status(200).json({ success: true, message: 'Pet deleted successfully' });
+//   } catch (error) {
+//     console.error(error);
+//     res.status(500).json({ success: false, message: 'Error deleting pet' });
+//   }
+// });
 
 app.get('/', (req, res) => {
   res.sendFile(path.resolve(__dirname, 'index.html'));

@@ -206,10 +206,10 @@ app.post('/pets', upload.single('image'), async (req, res) => {
           expires: "03-01-2500", // Long-term expiry date
         });
 
-        const { name, age, breed, gender, description, status } = req.body;
+        const { name, species, breed, gender, age, description, status } = req.body;
 
         const query = `
-          INSERT INTO pets (name, age, breed, gender, description, status, image_url)
+          INSERT INTO pets (name, species, breed, gender, age, description, status, image_url)
           VALUES ($1, $2, $3, $4, $5, $6, $7)
           RETURNING *;
         `;

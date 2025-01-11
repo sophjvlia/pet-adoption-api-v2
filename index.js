@@ -124,7 +124,7 @@ app.post('/login', async (req, res) => {
     const isMatch = await bcrypt.compare(password, user.password);
 
     if (!isMatch) {
-      return res.status(400).json({ error: 'Wrong password' });
+      return res.status(400).json({ error: 'Wrong email/password' });
     }
 
     const token = jwt.sign({ id: user.id, email: user.email }, process.env.JWT_SECRET, {
@@ -232,35 +232,35 @@ app.post('/pets', upload.single('image'), async (req, res) => {
   }
 });
 
-// // READ all pets
-// app.get('/pets', async (req, res) => {
-//   try {
-//     const result = await pool.query('SELECT * FROM pets;');
-//     if (result.rows.length === 0) {
-//       return res.status(404).json({ success: false, message: 'Pet not found' });
-//     }
-//     res.status(200).json({ success: true, data: result.rows });
-//   } catch (error) {
-//     console.error(error);
-//     res.status(500).json({ success: false, message: 'Error fetching pet' });
-//   }
-// });
+// READ all pets
+app.get('/pets', async (req, res) => {
+  try {
+    const result = await pool.query('SELECT * FROM pets;');
+    if (result.rows.length === 0) {
+      return res.status(404).json({ success: false, message: 'Pet not found' });
+    }
+    res.status(200).json({ success: true, data: result.rows });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: 'Error fetching pet' });
+  }
+});
 
-// // READ a single pet by ID
-// app.get('/pets/:id', async (req, res) => {
-//   const { id } = req.params;
+// READ a single pet by ID
+app.get('/pets/:id', async (req, res) => {
+  const { id } = req.params;
 
-//   try {
-//     const result = await pool.query('SELECT * FROM pets WHERE id = $1;', [id]);
-//     if (result.rows.length === 0) {
-//       return res.status(404).json({ success: false, message: 'Pet not found' });
-//     }
-//     res.status(200).json({ success: true, data: result.rows[0] });
-//   } catch (error) {
-//     console.error(error);
-//     res.status(500).json({ success: false, message: 'Error fetching pet' });
-//   }
-// });
+  try {
+    const result = await pool.query('SELECT * FROM pets WHERE id = $1;', [id]);
+    if (result.rows.length === 0) {
+      return res.status(404).json({ success: false, message: 'Pet not found' });
+    }
+    res.status(200).json({ success: true, data: result.rows[0] });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: 'Error fetching pet' });
+  }
+});
 
 // // UPDATE a pet by ID
 // app.put('/pets/:id', upload.single('image'), async (req, res) => {

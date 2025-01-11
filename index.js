@@ -210,10 +210,10 @@ app.post('/pets', upload.single('image'), async (req, res) => {
 
         const query = `
           INSERT INTO pets (name, species, breed, gender, age, description, status, image_url)
-          VALUES ($1, $2, $3, $4, $5, $6, $7)
+          VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
           RETURNING *;
         `;
-        const values = [name, age, breed, gender, description, status, publicUrl];
+        const values = [name, species, breed, gender, age, description, status, publicUrl];
 
         const result = await pool.query(query, values);
 

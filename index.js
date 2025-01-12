@@ -235,7 +235,26 @@ app.post('/pets', upload.single('image'), async (req, res) => {
 // READ all pets
 app.get('/pets', async (req, res) => {
   try {
-    const result = await pool.query('SELECT * FROM pets;');
+    const query = `
+      SELECT 
+        pets.id,
+        pets.name,
+        pets.species,
+        pets.breed AS breed_id,
+        CASE 
+          WHEN pets.species = 'Dog' THEN (SELECT breed FROM dog_breeds WHERE dog_breeds.id = pets.breed)
+          WHEN pets.species = 'Cat' THEN (SELECT breed FROM cat_breeds WHERE cat_breeds.id = pets.breed)
+          ELSE NULL
+        END AS breed_name,
+        pets.gender,
+        pets.age,
+        pets.description,
+        pets.status,
+        pets.image_url,
+        pets.created_at
+      FROM pets;
+    `;
+    const result = await pool.query(query);
     if (result.rows.length === 0) {
       return res.status(404).json({ success: false, message: 'Pet not found' });
     }
@@ -251,7 +270,27 @@ app.get('/pets/:id', async (req, res) => {
   const { id } = req.params;
 
   try {
-    const result = await pool.query('SELECT * FROM pets WHERE id = $1;', [id]);
+    const query = `
+      SELECT 
+        pets.id,
+        pets.name,
+        pets.species,
+        pets.breed AS breed_id,
+        CASE 
+          WHEN pets.species = 'Dog' THEN (SELECT breed FROM dog_breeds WHERE dog_breeds.id = pets.breed)
+          WHEN pets.species = 'Cat' THEN (SELECT breed FROM cat_breeds WHERE cat_breeds.id = pets.breed)
+          ELSE NULL
+        END AS breed_name,
+        pets.gender,
+        pets.age,
+        pets.description,
+        pets.status,
+        pets.image_url,
+        pets.created_at
+      FROM pets
+      WHERE pets.id = $1;
+    `;
+    const result = await pool.query(query, [id]);
     if (result.rows.length === 0) {
       return res.status(404).json({ success: false, message: 'Pet not found' });
     }

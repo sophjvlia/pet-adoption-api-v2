@@ -366,20 +366,84 @@ app.put('/pets/:id', upload.single('image'), async (req, res) => {
   }
 });
 
-// // DELETE a pet by ID
-// app.delete('/pets/:id', async (req, res) => {
-//   const { id } = req.params;
+// DELETE a pet by ID
+app.delete('/pets/:id', async (req, res) => {
+  const { id } = req.params;
 
+  try {
+    const result = await pool.query('DELETE FROM pets WHERE id = $1;', [id]);
+    if (result.rowCount === 0) {
+      return res.status(404).json({ success: false, message: 'Pet not found' });
+    }
+    res.status(200).json({ success: true, message: 'Pet deleted successfully' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: 'Error deleting pet' });
+  }
+});
+
+// // READ all applications
+// app.get('/applications', async (req, res) => {
 //   try {
-//     const result = await pool.query('DELETE FROM pets WHERE id = $1;', [id]);
-//     if (result.rowCount === 0) {
-//       return res.status(404).json({ success: false, message: 'Pet not found' });
+//     const query = `
+//       SELECT * FROM applications;
+//     `;
+//     const result = await pool.query(query);
+//     if (result.rows.length === 0) {
+//       return res.status(404).json({ success: false, message: 'Applications not found' });
 //     }
-//     res.status(200).json({ success: true, message: 'Pet deleted successfully' });
+//     res.status(200).json({ success: true, data: result.rows });
 //   } catch (error) {
 //     console.error(error);
-//     res.status(500).json({ success: false, message: 'Error deleting pet' });
+//     res.status(500).json({ success: false, message: 'Error fetching applications' });
 //   }
+// });
+
+// CREATE application
+// app.post('/applications', (req, res) => {
+//   const { user_id, pet_id, reason, living_situation, experience, household, employment_status } = req.body;
+
+//   if (!user_id || !pet_id || !reason || !living_situation || !experience) {
+//     return res.status(400).json({ error: 'All fields are required.' });
+//   }
+
+//   const newApplication = {
+//     id: applicationId++,
+//     user_id,
+//     pet_id,
+//     reason,
+//     living_situation,
+//     experience,
+//     household,
+//     employment_status,
+//     status: null,
+//     created_at: new Date(),
+//   };
+
+//   applications.push(newApplication);
+//   res.status(201).json({ message: 'Application submitted successfully.', application: newApplication });
+// });
+
+// // UPDATE Application Status
+// app.put('/applications/:id/status', (req, res) => {
+//   const { id } = req.params;
+//   const { status } = req.body; 
+
+//   const application = applications.find((app) => app.id === parseInt(id));
+
+//   if (!application) {
+//     return res.status(404).json({ error: 'Application not found.' });
+//   }
+
+//   if (status !== 1 && status !== 0) {
+//     return res.status(400).json({ error: 'Invalid status. Use 1 for Approved or 0 for Rejected.' });
+//   }
+
+//   application.status = status;
+//   application.updated_at = new Date();
+
+//   const statusText = status === 1 ? 'Approved' : 'Rejected';
+//   res.json({ message: `Application ${statusText} successfully.`, application });
 // });
 
 app.get('/', (req, res) => {

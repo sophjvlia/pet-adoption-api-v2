@@ -301,70 +301,70 @@ app.get('/pets/:id', async (req, res) => {
   }
 });
 
-// // UPDATE a pet by ID
-// app.put('/pets/:id', upload.single('image'), async (req, res) => {
-//   const { id } = req.params;
-//   const { name, age, breed, gender, description, status } = req.body;
+// UPDATE a pet by ID
+app.put('/pets/:id', upload.single('image'), async (req, res) => {
+  const { id } = req.params;
+  const { name, species, breed, gender, age, description, status } = req.body;
 
-//   try {
-//     let imageUrl = req.body.image_url;
+  try {
+    let imageUrl = req.body.image_url;
 
-//     if (req.file) {
-//       const file = req.file;
+    if (req.file) {
+      const file = req.file;
 
-//       const bucket = admin.storage().bucket();
-//       const blob = bucket.file(`uploads/${Date.now()}_${file.originalname}`);
-//       const blobStream = blob.createWriteStream({
-//         resumable: true,
-//         metadata: {
-//           contentType: file.mimetype,
-//         },
-//       });
+      const bucket = admin.storage().bucket();
+      const blob = bucket.file(`uploads/${Date.now()}_${file.originalname}`);
+      const blobStream = blob.createWriteStream({
+        resumable: true,
+        metadata: {
+          contentType: file.mimetype,
+        },
+      });
 
-//       blobStream.on("error", (err) => {
-//         console.error(err);
-//         return res.status(500).json({ success: false, message: "File upload failed", error: err.message });
-//       });
+      blobStream.on("error", (err) => {
+        console.error(err);
+        return res.status(500).json({ success: false, message: "File upload failed", error: err.message });
+      });
 
-//       const uploadPromise = new Promise((resolve, reject) => {
-//         blobStream.on("finish", async () => {
-//           try {
-//             const [publicUrl] = await blob.getSignedUrl({
-//               action: "read",
-//               expires: "03-01-2500", // Long-term expiry date
-//             });
-//             resolve(publicUrl);
-//           } catch (error) {
-//             console.error(error);
-//             reject(error);
-//           }
-//         });
-//         blobStream.end(file.buffer);
-//       });
+      const uploadPromise = new Promise((resolve, reject) => {
+        blobStream.on("finish", async () => {
+          try {
+            const [publicUrl] = await blob.getSignedUrl({
+              action: "read",
+              expires: "03-01-2500", // Long-term expiry date
+            });
+            resolve(publicUrl);
+          } catch (error) {
+            console.error(error);
+            reject(error);
+          }
+        });
+        blobStream.end(file.buffer);
+      });
 
-//       imageUrl = await uploadPromise;
-//     }
+      imageUrl = await uploadPromise;
+    }
 
-//     const query = `
-//       UPDATE pets
-//       SET name = $1, age = $2, breed = $3, gender = $4, description = $5, status = $6, image_url = $7
-//       WHERE id = $8
-//       RETURNING *;
-//     `;
-//     const values = [name, age, breed, gender, description, status, imageUrl, id];
+    const query = `
+      UPDATE pets
+      SET name = $1, species = $2, breed = $3, gender = $4, age = $5, description = $6, status = $7, image_url = $8
+      WHERE id = $9
+      RETURNING *;
+    `;
+    const values = [name, species, breed, gender, age, description, status, imageUrl, id];
 
-//     const result = await pool.query(query, values);
+    const result = await pool.query(query, values);
 
-//     if (result.rows.length === 0) {
-//       return res.status(404).json({ success: false, message: 'Pet not found' });
-//     }
+    if (result.rows.length === 0) {
+      return res.status(404).json({ success: false, message: 'Pet not found' });
+    }
     
-//     res.status(200).json({ success: true, data: result.rows[0] });
-//   } catch (error) {
-//     console.error(error);
-//     res.status(500).json({ success: false, message: 'Error updating pet', error: error.message });
-//   }
-// });
+    res.status(200).json({ success: true, data: result.rows[0] });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: 'Error updating pet', error: error.message });
+  }
+});
 
 // // DELETE a pet by ID
 // app.delete('/pets/:id', async (req, res) => {

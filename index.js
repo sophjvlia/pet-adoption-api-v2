@@ -307,7 +307,7 @@ app.put('/pets/:id', upload.single('image'), async (req, res) => {
   const { name, species, breed, gender, age, description, status } = req.body;
 
   try {
-    let imageUrl = req.body.image_url;
+    let imageUrl = req.body.image;
 
     if (req.file) {
       const file = req.file;

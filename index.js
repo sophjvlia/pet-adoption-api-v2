@@ -242,8 +242,8 @@ app.get('/pets', async (req, res) => {
         pets.species,
         pets.breed AS breed_id,
         CASE 
-          WHEN pets.species = 'Dog' THEN (SELECT breed FROM dog_breeds WHERE dog_breeds.id = pets.breed)
-          WHEN pets.species = 'Cat' THEN (SELECT breed FROM cat_breeds WHERE cat_breeds.id = pets.breed)
+          WHEN pets.species = 'Dog' THEN (SELECT breed FROM dog_breeds WHERE dog_breeds.id = pets.breed::integer)
+          WHEN pets.species = 'Cat' THEN (SELECT breed FROM cat_breeds WHERE cat_breeds.id = pets.breed::integer)
           ELSE NULL
         END AS breed_name,
         pets.gender,
@@ -277,8 +277,8 @@ app.get('/pets/:id', async (req, res) => {
         pets.species,
         pets.breed AS breed_id,
         CASE 
-          WHEN pets.species = 'Dog' THEN (SELECT breed FROM dog_breeds WHERE dog_breeds.id = pets.breed)
-          WHEN pets.species = 'Cat' THEN (SELECT breed FROM cat_breeds WHERE cat_breeds.id = pets.breed)
+          WHEN pets.species = 'Dog' THEN (SELECT breed FROM dog_breeds WHERE dog_breeds.id = pets.breed::integer)
+          WHEN pets.species = 'Cat' THEN (SELECT breed FROM cat_breeds WHERE cat_breeds.id = pets.breed::integer)
           ELSE NULL
         END AS breed_name,
         pets.gender,

@@ -400,7 +400,7 @@ app.get('/applications', async (req, res) => {
 });
 
 // CREATE application
-app.post('/applications', async (req, res) => {
+app.post('/application', async (req, res) => {
   const {
     user_id,
     pet_id,

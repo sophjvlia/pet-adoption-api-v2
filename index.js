@@ -382,47 +382,99 @@ app.delete('/pets/:id', async (req, res) => {
   }
 });
 
-// // READ all applications
-// app.get('/applications', async (req, res) => {
-//   try {
-//     const query = `
-//       SELECT * FROM applications;
-//     `;
-//     const result = await pool.query(query);
-//     if (result.rows.length === 0) {
-//       return res.status(404).json({ success: false, message: 'Applications not found' });
-//     }
-//     res.status(200).json({ success: true, data: result.rows });
-//   } catch (error) {
-//     console.error(error);
-//     res.status(500).json({ success: false, message: 'Error fetching applications' });
-//   }
-// });
+// READ all applications
+app.get('/applications', async (req, res) => {
+  try {
+    const query = `
+      SELECT * FROM applications;
+    `;
+    const result = await pool.query(query);
+    if (result.rows.length === 0) {
+      return res.status(404).json({ success: false, message: 'Applications not found' });
+    }
+    res.status(200).json({ success: true, data: result.rows });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: 'Error fetching applications' });
+  }
+});
 
 // CREATE application
-// app.post('/applications', (req, res) => {
-//   const { user_id, pet_id, reason, living_situation, experience, household, employment_status } = req.body;
+app.post('/applications', async (req, res) => {
+  const {
+    user_id,
+    pet_id,
+    reason,
+    living_situation,
+    experience,
+    household,
+    employment_status,
+    other_pets,
+    travel_frequency,
+    time_dedication,
+    outdoor_space,
+    allergies,
+    pet_training,
+    pet_preferences,
+  } = req.body;
 
-//   if (!user_id || !pet_id || !reason || !living_situation || !experience) {
-//     return res.status(400).json({ error: 'All fields are required.' });
-//   }
+  // Validate required fields
+  if (
+    !user_id ||
+    !pet_id ||
+    !reason ||
+    !living_situation ||
+    !experience ||
+    !household ||
+    !employment_status
+  ) {
+    return res.status(400).json({ error: 'All required fields must be provided.' });
+  }
 
-//   const newApplication = {
-//     id: applicationId++,
-//     user_id,
-//     pet_id,
-//     reason,
-//     living_situation,
-//     experience,
-//     household,
-//     employment_status,
-//     status: null,
-//     created_at: new Date(),
-//   };
+  try {
+    // Insert the new application into the database
+    const result = await pool.query(
+      `
+      INSERT INTO applications (
+        user_id, pet_id, reason, living_situation, experience, household, 
+        employment_status, other_pets, travel_frequency, time_dedication, 
+        outdoor_space, allergies, pet_training, pet_preferences, status, created_at
+      ) VALUES (
+        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 
+        $11, $12, $13, $14, $15, $16
+      ) RETURNING *;
+      `,
+      [
+        user_id,
+        pet_id,
+        reason,
+        living_situation,
+        experience,
+        household,
+        employment_status,
+        other_pets || null,
+        travel_frequency || null,
+        time_dedication || null,
+        outdoor_space || null,
+        allergies || null,
+        pet_training || null,
+        pet_preferences || null,
+        'pending', // Default status
+        new Date(),
+      ]
+    );
 
-//   applications.push(newApplication);
-//   res.status(201).json({ message: 'Application submitted successfully.', application: newApplication });
-// });
+    // Respond with the newly created application
+    const newApplication = result.rows[0];
+    res.status(201).json({
+      message: 'Application submitted successfully.',
+      application: newApplication,
+    });
+  } catch (error) {
+    console.error('Error inserting application:', error);
+    res.status(500).json({ error: 'An error occurred while processing your application.' });
+  }
+});
 
 // // UPDATE Application Status
 // app.put('/applications/:id/status', (req, res) => {

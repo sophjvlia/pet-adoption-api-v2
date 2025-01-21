@@ -418,18 +418,18 @@ app.post('/application', async (req, res) => {
     pet_preferences,
   } = req.body;
 
-  // // Validate required fields
-  // if (
-  //   !user_id ||
-  //   !pet_id ||
-  //   !reason ||
-  //   !living_situation ||
-  //   !experience ||
-  //   !household ||
-  //   !employment_status
-  // ) {
-  //   return res.status(400).json({ error: 'All required fields must be provided.' });
-  // }
+  // Validate required fields
+  if (
+    !user_id ||
+    !pet_id ||
+    !reason ||
+    !living_situation ||
+    !experience ||
+    !household ||
+    !employment_status
+  ) {
+    return res.status(400).json({ error: 'All required fields must be provided.' });
+  }
 
   try {
     // Insert the new application into the database

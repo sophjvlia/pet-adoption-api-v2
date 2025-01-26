@@ -404,29 +404,29 @@ app.post('/application', async (req, res) => {
   const {
     user_id,
     pet_id,
-    reason,
-    living_situation,
-    experience,
-    household,
-    employment_status,
-    other_pets,
-    travel_frequency,
-    time_dedication,
-    outdoor_space,
-    allergies,
-    pet_training,
-    pet_preferences,
+    adoptionReason,       
+    livingSituation,      
+    experience,          
+    householdMembers,     
+    workSchedule,         
+    petTypesCaredFor,    
+    travelFrequency,      
+    timeCommitment,      
+    outdoorSpace,         
+    petAllergies,        
+    petTraining,          
+    petPreferences,       
   } = req.body;
 
   // Validate required fields
   if (
     !user_id ||
     !pet_id ||
-    !reason ||
-    !living_situation ||
+    !adoptionReason ||
+    !livingSituation ||
     !experience ||
-    !household ||
-    !employment_status
+    !householdMembers ||
+    !workSchedule
   ) {
     return res.status(400).json({ error: 'All required fields must be provided.' });
   }
@@ -447,18 +447,18 @@ app.post('/application', async (req, res) => {
       [
         user_id,
         pet_id,
-        reason,
-        living_situation,
+        adoptionReason,
+        livingSituation,
         experience,
-        household,
-        employment_status,
-        other_pets || null,
-        travel_frequency || null,
-        time_dedication || null,
-        outdoor_space || null,
-        allergies || null,
-        pet_training || null,
-        pet_preferences || null,
+        householdMembers,
+        workSchedule,
+        petTypesCaredFor || null,
+        travelFrequency || null,
+        timeCommitment || null,
+        outdoorSpace || null,
+        petAllergies || null,
+        petTraining || null,
+        petPreferences || null,
         'pending', // Default status
         new Date(),
       ]
@@ -475,6 +475,7 @@ app.post('/application', async (req, res) => {
     res.status(500).json({ error: 'An error occurred while processing your application.' });
   }
 });
+
 
 // // UPDATE Application Status
 // app.put('/applications/:id/status', (req, res) => {

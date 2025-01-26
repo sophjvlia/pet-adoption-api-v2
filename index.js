@@ -446,22 +446,21 @@ app.post('/application', async (req, res) => {
       ) RETURNING *;
       `,
       [
-        user_id,
-        pet_id,
-        adoptionReason,
-        livingSituation,
+        user_id, 
+        pet_id, 
         experience,
-        householdMembers,
         workSchedule,
+        timeCommitment, 
+        livingSituation, 
+        outdoorSpace, 
+        travelFrequency || null, 
+        householdMembers, 
+        petAllergies || null, 
         petTypesCaredFor || null,
-        travelFrequency || null,
-        timeCommitment || null,
-        outdoorSpace || null,
-        petAllergies || null,
-        petTraining || null,
-        petPreferences || null,
-        'pending', // Default status
-        new Date(),
+        petTraining || null, 
+        adoptionReason,
+        new Date(), 
+        new Date(), 
       ]
     );
 
@@ -478,27 +477,27 @@ app.post('/application', async (req, res) => {
 });
 
 
-// // UPDATE Application Status
-// app.put('/applications/:id/status', (req, res) => {
-//   const { id } = req.params;
-//   const { status } = req.body; 
+// UPDATE Application Status
+app.put('/applications/:id/status', (req, res) => {
+  const { id } = req.params;
+  const { status } = req.body; 
 
-//   const application = applications.find((app) => app.id === parseInt(id));
+  const application = applications.find((app) => app.id === parseInt(id));
 
-//   if (!application) {
-//     return res.status(404).json({ error: 'Application not found.' });
-//   }
+  if (!application) {
+    return res.status(404).json({ error: 'Application not found.' });
+  }
 
-//   if (status !== 1 && status !== 0) {
-//     return res.status(400).json({ error: 'Invalid status. Use 1 for Approved or 0 for Rejected.' });
-//   }
+  if (status !== 1 && status !== 0) {
+    return res.status(400).json({ error: 'Invalid status. Use 1 for Approved or 0 for Rejected.' });
+  }
 
-//   application.status = status;
-//   application.updated_at = new Date();
+  application.status = status;
+  application.updated_at = new Date();
 
-//   const statusText = status === 1 ? 'Approved' : 'Rejected';
-//   res.json({ message: `Application ${statusText} successfully.`, application });
-// });
+  const statusText = status === 1 ? 'Approved' : 'Rejected';
+  res.json({ message: `Application ${statusText} successfully.`, application });
+});
 
 app.get('/', (req, res) => {
   res.sendFile(path.resolve(__dirname, 'index.html'));

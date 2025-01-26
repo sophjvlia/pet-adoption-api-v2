@@ -436,12 +436,13 @@ app.post('/application', async (req, res) => {
     const result = await pool.query(
       `
       INSERT INTO applications (
-        user_id, pet_id, reason, living_situation, experience, household, 
-        employment_status, other_pets, travel_frequency, time_dedication, 
-        outdoor_space, allergies, pet_training, pet_preferences, status, created_at
+        user_id, pet_id, experience, work_schedule, time_commitment, 
+        living_situation, outdoor_space, travel_frequency, household_members, 
+        pet_allergies, pet_types_cared_for, pet_training, adoption_reason, created_at, updated_at
       ) VALUES (
-        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 
-        $11, $12, $13, $14, $15, $16
+        $1, $2, $3, $4, $5, 
+        $6, $7, $8, $9, 
+        $10, $11, $12, $13, $14, $15
       ) RETURNING *;
       `,
       [

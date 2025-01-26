@@ -472,7 +472,7 @@ app.post('/application', async (req, res) => {
     });
   } catch (error) {
     console.error('Error inserting application:', error);
-    res.status(500).json({ error: 'An error occurred while processing your application.' });
+    res.status(500).json({ error: 'An error occurred while processing your application.', message: error.message });
   }
 });
 

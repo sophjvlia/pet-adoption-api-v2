@@ -438,7 +438,7 @@ app.post('/application', async (req, res) => {
       INSERT INTO applications (
         user_id, pet_id, experience, work_schedule, time_commitment, 
         living_situation, outdoor_space, travel_frequency, household_members, 
-        pet_allergies, pet_types_cared_for, pet_training, adoption_reason, created_at, updated_at
+        pet_allergies, pet_types_cared_for, pet_training, adoption_reason, status, created_at, updated_at
       ) VALUES (
         $1, $2, $3, $4, $5, 
         $6, $7, $8, $9, 
@@ -459,6 +459,7 @@ app.post('/application', async (req, res) => {
         petTypesCaredFor || null,
         petTraining || null, 
         adoptionReason,
+        0,
         new Date(), 
         new Date(), 
       ]
@@ -478,25 +479,45 @@ app.post('/application', async (req, res) => {
 
 
 // UPDATE Application Status
-app.put('/applications/:id/status', (req, res) => {
+app.put('/applications/:id/status', async (req, res) => {
   const { id } = req.params;
-  const { status } = req.body; 
+  const { status } = req.body;
 
-  const application = applications.find((app) => app.id === parseInt(id));
-
-  if (!application) {
-    return res.status(404).json({ error: 'Application not found.' });
+  // Validate the status
+  if (![1, 0, -1].includes(status)) {
+    return res.status(400).json({
+      error: 'Invalid status. Use 1 for Approved, 0 for Pending, or -1 for Rejected.',
+    });
   }
 
-  if (status !== 1 && status !== 0) {
-    return res.status(400).json({ error: 'Invalid status. Use 1 for Approved or 0 for Rejected.' });
+  try {
+
+    const result = await pool.query(
+      `
+      UPDATE applications
+      SET status = $1, updated_at = $2
+      WHERE id = $3
+      RETURNING *;
+      `,
+      [status === 1 ? 'approved' : status === -1 ? 'rejected' : 'pending', new Date(), id]
+    );
+
+    if (result.rowCount === 0) {
+      return res.status(404).json({ error: 'Application not found.' });
+    }
+
+    const updatedApplication = result.rows[0];
+    const statusText =
+      status === 1 ? 'approved' : status === -1 ? 'rejected' : 'set to pending';
+
+    res.json({
+      message: `Application successfully ${statusText}.`,
+      application: updatedApplication,
+    });
+  } catch (error) {
+    console.error('Error updating application status:', error);
+    res.status(500).json({ error: 'An error occurred while updating the application status.' });
   }
-
-  application.status = status;
-  application.updated_at = new Date();
-
-  const statusText = status === 1 ? 'Approved' : 'Rejected';
-  res.json({ message: `Application ${statusText} successfully.`, application });
 });
 
 app.get('/', (req, res) => {

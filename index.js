@@ -112,7 +112,7 @@ app.post('/login', async (req, res) => {
 
   try {
     const result = await client.query(
-      'SELECT id, email, password FROM users WHERE email = $1',
+      'SELECT id, email, password, is_admin FROM users WHERE email = $1',
       [email]
     );
     const user = result.rows[0];
@@ -127,7 +127,7 @@ app.post('/login', async (req, res) => {
       return res.status(400).json({ error: 'Wrong email/password' });
     }
 
-    const token = jwt.sign({ id: user.id, email: user.email }, process.env.JWT_SECRET, {
+    const token = jwt.sign({ id: user.id, email: user.email, is_admin: user.is_admin }, process.env.JWT_SECRET, {
       expiresIn: '1h',
     });
 
@@ -414,8 +414,7 @@ app.post('/application', async (req, res) => {
     timeCommitment,      
     outdoorSpace,         
     petAllergies,        
-    petTraining,          
-    petPreferences,       
+    petTraining,      
   } = req.body;
 
   // Validate required fields

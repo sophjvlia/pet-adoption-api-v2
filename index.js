@@ -127,11 +127,11 @@ app.post('/login', async (req, res) => {
       return res.status(400).json({ error: 'Wrong email/password' });
     }
 
-    const token = jwt.sign({ id: user.id, email: user.email, is_admin: user.is_admin }, process.env.JWT_SECRET, {
+    const token = jwt.sign({ id: user.id, email: user.email }, process.env.JWT_SECRET, {
       expiresIn: '1h',
     });
 
-    res.json({ token, user: { id: user.id, email: user.email } });
+    res.json({ token, user: { id: user.id, email: user.email, is_admin: user.is_admin } });
   } catch (error) {
     console.error('Error logging in:', error);
     res.status(500).json({ error: 'Login failed', details: error.message });

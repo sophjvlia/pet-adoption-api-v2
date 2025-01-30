@@ -558,6 +558,23 @@ app.put('/applications/:id/status', async (req, res) => {
   }
 });
 
+
+// DELETE an application by ID
+app.delete('/applications/:id', async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const result = await pool.query('DELETE FROM applications WHERE id = $1;', [id]);
+    if (result.rowCount === 0) {
+      return res.status(404).json({ success: false, message: 'Application not found' });
+    }
+    res.status(200).json({ success: true, message: 'Application deleted successfully' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: 'Error deleting application' });
+  }
+});
+
 app.get('/', (req, res) => {
   res.sendFile(path.resolve(__dirname, 'index.html'));
 });

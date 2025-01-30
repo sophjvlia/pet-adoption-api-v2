@@ -534,15 +534,11 @@ app.put('/applications/:id/status', async (req, res) => {
       `
       UPDATE applications
       SET status = $1, updated_at = NOW()
-      WHERE id = $3
+      WHERE id = $2
       RETURNING *;
       `,
       [status, id]
     );
-
-    if (result.rowCount === 0) {
-      return res.status(404).json({ error: 'Application not found.' });
-    }
 
     if (result.rowCount === 0) {
       return res.status(404).json({ error: 'Application not found.' });

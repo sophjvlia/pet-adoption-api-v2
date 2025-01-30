@@ -533,24 +533,24 @@ app.put('/applications/:id/status', async (req, res) => {
     const result = await pool.query(
       `
       UPDATE applications
-      SET status = $1, updated_at = $2
+      SET status = $1, updated_at = NOW()
       WHERE id = $3
       RETURNING *;
       `,
-      [status === 1 ? 'approved' : status === -1 ? 'rejected' : 'pending', new Date(), id]
+      [status, id]
     );
 
     if (result.rowCount === 0) {
       return res.status(404).json({ error: 'Application not found.' });
     }
 
-    const updatedApplication = result.rows[0];
-    const statusText =
-      status === 1 ? 'approved' : status === -1 ? 'rejected' : 'set to pending';
+    if (result.rowCount === 0) {
+      return res.status(404).json({ error: 'Application not found.' });
+    }
 
     res.json({
-      message: `Application successfully ${statusText}.`,
-      application: updatedApplication,
+      message: `Application status updated successfully.`,
+      application: result.rows[0],
     });
   } catch (error) {
     console.error('Error updating application status:', error);

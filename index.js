@@ -386,7 +386,46 @@ app.delete('/pets/:id', async (req, res) => {
 app.get('/applications', async (req, res) => {
   try {
     const query = `
-      SELECT * FROM applications;
+      SELECT 
+          applications.id AS application_id,
+          applications.user_id,
+          applications.pet_id,
+          applications.experience,
+          applications.work_schedule,
+          applications.time_commitment,
+          applications.living_situation,
+          applications.outdoor_space,
+          applications.travel_frequency,
+          applications.household_members,
+          applications.pet_allergies,
+          applications.pet_types_cared_for,
+          applications.pet_training,
+          applications.adoption_reason,
+          applications.status,
+
+          -- User details
+          users.first_name,
+          users.last_name,
+          users.country_code,
+          users.phone_number,
+          users.email,
+
+          -- Pet details
+          pets.name AS pet_name,
+          pets.species,
+          pets.gender,
+          pets.age,
+
+          -- Determine breed name conditionally
+          CASE 
+              WHEN pets.species = 'Dog' THEN (SELECT breed FROM dog_breeds WHERE dog_breeds.id = pets.breed::integer)
+              WHEN pets.species = 'Cat' THEN (SELECT breed FROM cat_breeds WHERE cat_breeds.id = pets.breed::integer)
+              ELSE NULL
+          END AS breed_name
+
+      FROM applications
+      JOIN users ON applications.user_id = users.id
+      JOIN pets ON applications.pet_id = pets.id;
     `;
     const result = await pool.query(query);
     if (result.rows.length === 0) {

@@ -524,6 +524,7 @@ app.put('/applications/:id/status', async (req, res) => {
   // Validate the status
   if (![1, 0, -1].includes(status)) {
     return res.status(400).json({
+      success: false,
       error: 'Invalid status. Use 1 for Approved, 0 for Pending, or -1 for Rejected.',
     });
   }
@@ -541,16 +542,17 @@ app.put('/applications/:id/status', async (req, res) => {
     );
 
     if (result.rowCount === 0) {
-      return res.status(404).json({ error: 'Application not found.' });
+      return res.status(404).json({ success: false, error: 'Application not found.' });
     }
 
     res.json({
+      success: true,
       message: `Application status updated successfully.`,
       application: result.rows[0],
     });
   } catch (error) {
     console.error('Error updating application status:', error);
-    res.status(500).json({ error: 'An error occurred while updating the application status.' });
+    res.status(500).json({ success: false, error: 'An error occurred while updating the application status.' });
   }
 });
 

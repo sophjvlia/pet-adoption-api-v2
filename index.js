@@ -387,7 +387,7 @@ app.get('/applications', async (req, res) => {
   try {
     const query = `
       SELECT 
-          applications.id AS application_id,
+          applications.id,
           applications.user_id,
           applications.pet_id,
           applications.experience,

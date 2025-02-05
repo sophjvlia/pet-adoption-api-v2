@@ -385,7 +385,7 @@ app.delete('/pets/:id', async (req, res) => {
 // READ all applications
 app.get('/applications', async (req, res) => {
   const { id } = req.query;
-  
+
   try {
     const query = `
       SELECT 
@@ -418,25 +418,25 @@ app.get('/applications', async (req, res) => {
           pets.gender,
           pets.age,
 
-          -- Determine breed name conditionally
-          CASE 
-              WHEN pets.species = 'Dog' THEN (SELECT breed FROM dog_breeds WHERE dog_breeds.id = pets.breed::integer)
-              WHEN pets.species = 'Cat' THEN (SELECT breed FROM cat_breeds WHERE cat_breeds.id = pets.breed::integer)
-              ELSE NULL
-          END AS breed_name
+          -- Breed name via JOIN instead of subquery
+          COALESCE(dog_breeds.breed, cat_breeds.breed) AS breed_name
 
       FROM applications
       JOIN users ON applications.user_id = users.id
       JOIN pets ON applications.pet_id = pets.id
+      LEFT JOIN dog_breeds ON pets.species = 'Dog' AND dog_breeds.id = pets.breed::integer
+      LEFT JOIN cat_breeds ON pets.species = 'Cat' AND cat_breeds.id = pets.breed::integer
       ${id ? "WHERE applications.user_id = $1" : ""}
     `;
 
-    const value = id ? id : "";
-    
-    const result = await pool.query(query, value);
+    const values = id ? [id] : [];
+
+    const result = await pool.query(query, values);
+
     if (result.rows.length === 0) {
       return res.status(404).json({ success: false, message: 'Applications not found' });
     }
+
     res.status(200).json({ success: true, data: result.rows });
   } catch (error) {
     console.error(error);

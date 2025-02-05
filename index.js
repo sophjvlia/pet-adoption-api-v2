@@ -431,7 +431,7 @@ app.get('/applications', async (req, res) => {
       ${id ? "WHERE applications.user_id = $1" : ""}
     `;
 
-    const value = id? id : "";
+    const value = id ? id : "";
     
     const result = await pool.query(query, value);
     if (result.rows.length === 0) {

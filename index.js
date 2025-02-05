@@ -384,6 +384,8 @@ app.delete('/pets/:id', async (req, res) => {
 
 // READ all applications
 app.get('/applications', async (req, res) => {
+  const { id } = req.query;
+  
   try {
     const query = `
       SELECT 
@@ -426,8 +428,12 @@ app.get('/applications', async (req, res) => {
       FROM applications
       JOIN users ON applications.user_id = users.id
       JOIN pets ON applications.pet_id = pets.id;
+      ${id ? "WHERE applications.user_id = $1" : ""}
     `;
-    const result = await pool.query(query);
+
+    const value = id? id : "";
+    
+    const result = await pool.query(query, value);
     if (result.rows.length === 0) {
       return res.status(404).json({ success: false, message: 'Applications not found' });
     }

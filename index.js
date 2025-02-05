@@ -427,7 +427,7 @@ app.get('/applications', async (req, res) => {
 
       FROM applications
       JOIN users ON applications.user_id = users.id
-      JOIN pets ON applications.pet_id = pets.id;
+      JOIN pets ON applications.pet_id = pets.id
       ${id ? "WHERE applications.user_id = $1" : ""}
     `;
 
@@ -546,6 +546,18 @@ app.put('/applications/:id/status', async (req, res) => {
       `,
       [status, id]
     );
+
+    if (status === 1) {
+      await pool.query(
+        `UPDATE pets SET status = 2 WHERE id = $1;`,
+        [id]
+      );
+    } else if (status === -1) {
+      await pool.query(
+        `UPDATE pets SET status = 1 WHERE id = $1;`,
+        [id]
+      );
+    }
 
     if (result.rowCount === 0) {
       return res.status(404).json({ success: false, error: 'Application not found.' });

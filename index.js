@@ -525,7 +525,7 @@ app.post('/application', async (req, res) => {
 // UPDATE Application Status
 app.put('/applications/:id/status', async (req, res) => {
   const { id } = req.params;
-  const { status } = req.body;
+  const { status, petId } = req.body;
 
   // Validate the status
   if (![1, 0, -1].includes(status)) {
@@ -550,12 +550,12 @@ app.put('/applications/:id/status', async (req, res) => {
     if (status === 1) {
       await pool.query(
         `UPDATE pets SET status = 2 WHERE id = $1;`,
-        [id]
+        [petId]
       );
     } else if (status === -1) {
       await pool.query(
         `UPDATE pets SET status = 1 WHERE id = $1;`,
-        [id]
+        [petId]
       );
     }
 

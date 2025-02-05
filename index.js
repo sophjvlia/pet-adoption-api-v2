@@ -241,11 +241,7 @@ app.get('/pets', async (req, res) => {
         pets.name,
         pets.species,
         pets.breed AS breed_id,
-        CASE 
-          WHEN pets.species = 'Dog' THEN (SELECT breed FROM dog_breeds WHERE dog_breeds.id = pets.breed::integer)
-          WHEN pets.species = 'Cat' THEN (SELECT breed FROM cat_breeds WHERE cat_breeds.id = pets.breed::integer)
-          ELSE NULL
-        END AS breed_name,
+        COALESCE(dog_breeds.breed, cat_breeds.breed) AS breed_name, -- Use JOIN instead of subqueries
         pets.gender,
         pets.age,
         pets.description,
@@ -253,6 +249,8 @@ app.get('/pets', async (req, res) => {
         pets.image_url,
         pets.created_at
       FROM pets
+      LEFT JOIN dog_breeds ON pets.species = 'Dog' AND dog_breeds.id = pets.breed::integer
+      LEFT JOIN cat_breeds ON pets.species = 'Cat' AND cat_breeds.id = pets.breed::integer
       WHERE pets.status = 1;
     `;
     const result = await pool.query(query);

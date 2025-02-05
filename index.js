@@ -252,7 +252,8 @@ app.get('/pets', async (req, res) => {
         pets.status,
         pets.image_url,
         pets.created_at
-      FROM pets;
+      FROM pets
+      WHERE pets.status = 1;
     `;
     const result = await pool.query(query);
     if (result.rows.length === 0) {

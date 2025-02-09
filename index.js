@@ -241,7 +241,7 @@ app.get('/pets', async (req, res) => {
         pets.name,
         pets.species,
         pets.breed AS breed_id,
-        COALESCE(dog_breeds.breed, cat_breeds.breed) AS breed_name, -- Use JOIN instead of subqueries
+        COALESCE(dog_breeds.breed, cat_breeds.breed) AS breed_name,
         pets.gender,
         pets.age,
         pets.description,

@@ -234,8 +234,9 @@ app.post('/pets', upload.single('image'), async (req, res) => {
 
 // READ all pets
 app.get('/pets', async (req, res) => {
+  const { status } = req.query;
   try {
-    const query = `
+    let query = `
       SELECT 
         pets.id,
         pets.name,
@@ -251,16 +252,23 @@ app.get('/pets', async (req, res) => {
       FROM pets
       LEFT JOIN dog_breeds ON pets.species = 'Dog' AND dog_breeds.id = pets.breed::integer
       LEFT JOIN cat_breeds ON pets.species = 'Cat' AND cat_breeds.id = pets.breed::integer
-      WHERE pets.status = 1;
     `;
-    const result = await pool.query(query);
-    if (result.rows.length === 0) {
-      return res.status(404).json({ success: false, message: 'Pet not found' });
+
+    // If `status` query param is provided, filter by status
+    if (status !== undefined) {
+      query += ` WHERE pets.status = $1`;
     }
+
+    const result = await pool.query(query, status !== undefined ? [status] : []);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ success: false, message: 'No pets found' });
+    }
+
     res.status(200).json({ success: true, data: result.rows });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ success: false, message: 'Error fetching pet' });
+    res.status(500).json({ success: false, message: 'Error fetching pets' });
   }
 });
 

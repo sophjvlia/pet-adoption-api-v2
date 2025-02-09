@@ -177,9 +177,8 @@ app.get('/cat/breeds', async (req, res) => {
 // CREATE a new pet
 app.post('/pets', upload.single('image'), async (req, res) => {
   try {
-    // File upload logic
-    const file = req.file; 
-    
+    const file = req.file;
+
     if (!file) {
       return res.status(400).json({ success: false, message: "No file uploaded" });
     }
@@ -203,28 +202,51 @@ app.post('/pets', upload.single('image'), async (req, res) => {
         // Generate a public URL
         const [publicUrl] = await blob.getSignedUrl({
           action: "read",
-          expires: "03-01-2500", // Long-term expiry date
+          expires: "03-01-2500",
         });
 
         const { name, species, breed, gender, age, description, status } = req.body;
 
+        // Insert the new pet and immediately return breed_name
         const query = `
           INSERT INTO pets (name, species, breed, gender, age, description, status, image_url)
           VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-          RETURNING *;
+          RETURNING id;
         `;
         const values = [name, species, breed, gender, age, description, status, publicUrl];
 
         const result = await pool.query(query, values);
+        const newPetId = result.rows[0].id;
 
-        res.status(201).json({ success: true, data: result.rows[0] });
+        // Fetch pet with breed_name
+        const fetchQuery = `
+          SELECT 
+            pets.id,
+            pets.name,
+            pets.species,
+            pets.breed AS breed_id,
+            COALESCE(dog_breeds.breed, cat_breeds.breed) AS breed_name,
+            pets.gender,
+            pets.age,
+            pets.description,
+            pets.status,
+            pets.image_url,
+            pets.created_at
+          FROM pets
+          LEFT JOIN dog_breeds ON pets.species = 'Dog' AND dog_breeds.id = pets.breed::integer
+          LEFT JOIN cat_breeds ON pets.species = 'Cat' AND cat_breeds.id = pets.breed::integer
+          WHERE pets.id = $1;
+        `;
+
+        const petResult = await pool.query(fetchQuery, [newPetId]);
+
+        res.status(201).json({ success: true, data: petResult.rows[0] });
       } catch (error) {
         console.error(error);
         res.status(500).json({ success: false, message: "Error creating pet", error: error.message });
       }
     });
 
-    // Start the upload
     blobStream.end(file.buffer);
   } catch (error) {
     console.error(error);
